@@ -1,8 +1,11 @@
 /* @flow */
 
+import type { BytesR, BytesB } from "@capnp-js/bytes";
 import type { SugarlessIteratorResult } from "@capnp-js/transform";
 
 import type { StringCursor } from "../common";
+
+import { getSubarray, set } from "@capnp-js/bytes";
 
 import {
   a2b,
@@ -17,12 +20,12 @@ type uint = number;
 /* This base-64 decoder doesn't bother with trailing "=" padding. */
 
 export default class TransformCore {
-  +buffer: Uint8Array;
+  +buffer: BytesB;
   +bufferPreimageLength: uint;
   base64: StringCursor;
   remainder: string;
 
-  constructor(buffer: Uint8Array) {
+  constructor(buffer: BytesB) {
     if (buffer.length < 3) {
       throw new Error(DECODE_BUFFER_SIZE_ERROR);
     }
@@ -47,7 +50,7 @@ export default class TransformCore {
     };
   }
 
-  next(): SugarlessIteratorResult<Uint8Array> {
+  next(): SugarlessIteratorResult<BytesR> {
     // #if _DEBUG
     console.log("\n***** next() beginning *****");
     // #endif
@@ -77,9 +80,9 @@ export default class TransformCore {
       quad |= a2b[this.base64.string.charCodeAt(this.base64.i++)] << 6;
       quad |= a2b[this.base64.string.charCodeAt(this.base64.i++)];
 
-      this.buffer[i++] = (quad >> 16) & 0xff;
-      this.buffer[i++] = (quad >> 8) & 0xff;
-      this.buffer[i++] = quad & 0xff;
+      set((quad >> 16) & 0xff, i++, this.buffer);
+      set((quad >> 8) & 0xff, i++, this.buffer);
+      set(quad & 0xff, i++, this.buffer);
     }
 
     if (availableChars % 4) {
@@ -92,11 +95,11 @@ export default class TransformCore {
 
     return {
       done: false,
-      value: this.buffer.subarray(0, i),
+      value: getSubarray(0, i, this.buffer),
     };
   }
 
-  flush(): SugarlessIteratorResult<Uint8Array> {
+  flush(): SugarlessIteratorResult<BytesR> {
     // #if _DEBUG
     console.log("\n***** flush() beginning *****");
     // #endif
@@ -109,13 +112,13 @@ export default class TransformCore {
     case 2: {
       let pair = a2b[this.remainder.charCodeAt(0)] << 2;
       pair |= a2b[this.remainder.charCodeAt(1)] >> 4;
-      this.buffer[0] = pair & 0xff;
+      set(pair & 0xff, 0, this.buffer);
 
       this.remainder = "";
 
       return {
         done: false,
-        value: this.buffer.subarray(0, 1),
+        value: getSubarray(0, 1, this.buffer),
       };
     }
     default: {
@@ -123,14 +126,14 @@ export default class TransformCore {
       triple |= a2b[this.remainder.charCodeAt(1)] << 4;
       triple |= a2b[this.remainder.charCodeAt(2)] >> 2;
 
-      this.buffer[0] = (triple >> 8) & 0xff;
-      this.buffer[1] = triple & 0xff;
+      set((triple >> 8) & 0xff, 0, this.buffer);
+      set(triple & 0xff, 1, this.buffer);
 
       this.remainder = "";
 
       return {
         done: false,
-        value: this.buffer.subarray(0, 2),
+        value: getSubarray(0, 2, this.buffer),
       };
     }
     }

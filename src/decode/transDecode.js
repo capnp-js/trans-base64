@@ -1,5 +1,6 @@
 /* @flow */
 
+import type { BytesR, BytesB } from "@capnp-js/bytes";
 import type {
   AsyncIteratorTransform,
   Source,
@@ -11,8 +12,8 @@ import TransformCore from "./TransformCore";
 
 import { EMPTY } from "../common";
 
-export default function transDecode(buffer: Uint8Array): AsyncIteratorTransform<string, Uint8Array> {
-  return function transform(source: Source<string>): Source<Uint8Array> {
+export default function transDecode(buffer: BytesB): AsyncIteratorTransform<string, BytesR> {
+  return function transform(source: Source<string>): Source<BytesR> {
     const status: {|
       doned: null | Error,
       done: null | (true | Error),
@@ -23,7 +24,7 @@ export default function transDecode(buffer: Uint8Array): AsyncIteratorTransform<
 
     const core = new TransformCore(buffer);
 
-    return function decoded(abort: null | true, put: (null | (true | Error), Uint8Array) => void): void {
+    return function decoded(abort: null | true, put: (null | (true | Error), BytesR) => void): void {
       if (status.doned) {
         put(status.doned, EMPTY);
         return;

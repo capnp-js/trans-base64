@@ -1,10 +1,13 @@
 /* @flow */
 
+import type { BytesR, BytesB } from "@capnp-js/bytes";
 import type {
   Start,
   SugarlessIteratorResult,
   SugarlessIterator,
 } from "@capnp-js/transform";
+
+import { getSubarray, set } from "@capnp-js/bytes";
 
 import {
   a2b,
@@ -15,7 +18,7 @@ import {
 
 /* This base-64 decoder doesn't bother with trailing "=" padding. */
 
-export default function startDecodeSync(buffer: Uint8Array): Start<string, Uint8Array> {
+export default function startDecodeSync(buffer: BytesB): Start<string, BytesR> {
   if (buffer.length < 3) {
     throw new Error(DECODE_BUFFER_SIZE_ERROR);
   }
@@ -26,12 +29,12 @@ export default function startDecodeSync(buffer: Uint8Array): Start<string, Uint8
 
   const chunkLength = buffer.length / 3 * 4;
 
-  return function start(base64: string): SugarlessIterator<Uint8Array> {
+  return function start(base64: string): SugarlessIterator<BytesR> {
     let i = 0;
     const overallQuadsEnd = base64.length - (base64.length % 4);
     let error = null;
     return {
-      next(): SugarlessIteratorResult<Uint8Array> {
+      next(): SugarlessIteratorResult<BytesR> {
         if (error !== null) {
           return { done: error };
         }
@@ -56,9 +59,9 @@ export default function startDecodeSync(buffer: Uint8Array): Start<string, Uint8
           quad |= a2b[base64.charCodeAt(i++)] << 6;
           quad |= a2b[base64.charCodeAt(i++)];
 
-          buffer[bufferI++] = (quad >> 16) & 0xff;
-          buffer[bufferI++] = (quad >> 8) & 0xff;
-          buffer[bufferI++] = quad & 0xff;
+          set((quad >> 16) & 0xff, bufferI++, buffer);
+          set((quad >> 8) & 0xff, bufferI++, buffer);
+          set(quad & 0xff, bufferI++, buffer);
         }
 
         if (bufferI < buffer.length) {
@@ -84,7 +87,7 @@ export default function startDecodeSync(buffer: Uint8Array): Start<string, Uint8
             let pair = a2b[base64.charCodeAt(i++)] << 2;
             pair |= a2b[base64.charCodeAt(i++)] >> 4;
 
-            buffer[bufferI++] = pair & 0xff;
+            set(pair & 0xff, bufferI++, buffer);
             break;
           }
           default: {
@@ -96,15 +99,15 @@ export default function startDecodeSync(buffer: Uint8Array): Start<string, Uint8
             triple |= a2b[base64.charCodeAt(i++)] << 4;
             triple |= a2b[base64.charCodeAt(i++)] >> 2;
 
-            buffer[bufferI++] = (triple >> 8) & 0xff;
-            buffer[bufferI++] = triple & 0xff;
+            set((triple >> 8) & 0xff, bufferI++, buffer);
+            set(triple & 0xff, bufferI++, buffer);
           }
           }
         }
 
         return {
           done: false,
-          value: buffer.subarray(0, bufferI),
+          value: getSubarray(0, bufferI, buffer),
         };
       },
     };

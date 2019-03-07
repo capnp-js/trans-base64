@@ -1,5 +1,6 @@
 /* @flow */
 
+import type { BytesR } from "@capnp-js/bytes";
 import type {
   AsyncIteratorTransform,
   Source,
@@ -9,7 +10,7 @@ import { PULL_STREAM_BROKE_PROTOCOL } from "@capnp-js/transform";
 
 import TransformCore from "./TransformCore";
 
-export default function transEncode(source: Source<Uint8Array>): Source<string> {
+export default function transEncode(source: Source<BytesR>): Source<string> {
   const status: {|
     doned: null | Error,
     done: null | (true | Error),
@@ -68,4 +69,4 @@ export default function transEncode(source: Source<Uint8Array>): Source<string> 
     });
   };
 }
-(transEncode: AsyncIteratorTransform<Uint8Array, string>);
+(transEncode: AsyncIteratorTransform<BytesR, string>);

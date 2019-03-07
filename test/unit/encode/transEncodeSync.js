@@ -3,6 +3,7 @@
 import * as assert from "assert";
 import Prando from "prando";
 import { describe, it } from "mocha";
+import { create, getSubarray, set } from "@capnp-js/bytes";
 import { array } from "@capnp-js/trans-inject";
 import { transEncodeSync as alignBytes } from "@capnp-js/trans-align-bytes";
 
@@ -14,12 +15,12 @@ describe("transEncodeSync", t => {
   for (let i=0; i<5000; ++i) {
     it(`decodes random data i=${i}`, function () {
       const length = random.nextInt(0, 200);
-      const raw = new Uint8Array(length);
+      const raw = create(length);
       for (let i=0; i<length; ++i) {
-        raw[i] = random.nextInt(0, 256);
+        set(random.nextInt(0, 256), i, raw);
       }
 
-      let expected = Buffer.from(raw).toString("base64");
+      let expected = Buffer.from(((raw: any): Uint8Array)).toString("base64");
       while (expected.charAt(expected.length - 1) === "=") {
         expected = expected.substr(0, expected.length - 1);
       }
@@ -28,7 +29,7 @@ describe("transEncodeSync", t => {
       let cut = 0;
       while (cut < length) {
         const next = Math.min(cut + random.nextInt(0, 50), length);
-        buffers.push(raw.subarray(cut, next));
+        buffers.push(getSubarray(cut, next, raw));
         cut = next;
       }
 

@@ -1,5 +1,9 @@
 /* @flow */
 
+import type { BytesR } from "@capnp-js/bytes";
+
+import { create } from "@capnp-js/bytes";
+
 type uint = number;
 
 export type StringCursor = {|
@@ -7,4 +11,4 @@ export type StringCursor = {|
   i: uint,
 |};
 
-export const EMPTY = new Uint8Array(0);
+export const EMPTY: BytesR = create(0);

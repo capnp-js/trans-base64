@@ -1,6 +1,9 @@
 /* @flow */
 
+import type { BytesR } from "@capnp-js/bytes";
 import type { SugarlessIterator } from "@capnp-js/transform";
+
+import { create, getSubarray, setSubarray } from "@capnp-js/bytes";
 
 import { EMPTY } from "../common";
 
@@ -10,7 +13,7 @@ import { ENCODE_CHUNK_ALIGNMENT_ERROR } from "./constant";
 
 /* This base-64 encoder doesn't bother with trailing "=" padding. */
 
-export default function finishEncodeSync(source: SugarlessIterator<Uint8Array>): string | Error {
+export default function finishEncodeSync(source: SugarlessIterator<BytesR>): string | Error {
   let base64 = "";
   let remainder = EMPTY;
 
@@ -28,8 +31,13 @@ export default function finishEncodeSync(source: SugarlessIterator<Uint8Array>):
 
     if (chunk.length % 3) {
       const cut = chunk.length - (chunk.length % 3);
-      base64 += writeQuads(chunk.subarray(0, cut));
-      remainder = chunk.slice(cut);
+      base64 += writeQuads(getSubarray(0, cut, chunk));
+      remainder = create(chunk.length - cut);
+      setSubarray(
+        getSubarray(cut, chunk.length, chunk),
+        0,
+        remainder,
+      );
     } else {
       base64 += writeQuads(chunk);
     }

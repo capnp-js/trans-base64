@@ -1,5 +1,6 @@
 /* @flow */
 
+import type { BytesR, BytesB } from "@capnp-js/bytes";
 import type {
   IteratorTransform,
   SugarlessIterator,
@@ -10,14 +11,14 @@ import { EMPTY } from "../common";
 
 import TransformCore from "./TransformCore";
 
-export default function transDecodeSync(buffer: Uint8Array): IteratorTransform<string, Uint8Array> {
-  return function transform(source: SugarlessIterator<string>): SugarlessIterator<Uint8Array> {
+export default function transDecodeSync(buffer: BytesB): IteratorTransform<string, BytesR> {
+  return function transform(source: SugarlessIterator<string>): SugarlessIterator<BytesR> {
     const status: {| done: null | (true | Error) |} = { done: null };
 
     const core = new TransformCore(buffer);
 
     return {
-      next(): SugarlessIteratorResult<Uint8Array> {
+      next(): SugarlessIteratorResult<BytesR> {
         if (status.done) {
           return { done: status.done };
         }
